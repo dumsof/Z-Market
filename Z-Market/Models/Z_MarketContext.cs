@@ -15,7 +15,7 @@ namespace Z_Market.Models
         // automatically whenever you change your model schema, please use data migrations.
         // For more information refer to the documentation:
         // http://msdn.microsoft.com/en-us/data/jj591621.aspx
-    
+
         public Z_MarketContext() : base("name=Z_MarketContext")
         {
         }
@@ -35,5 +35,9 @@ namespace Z_Market.Models
         public System.Data.Entity.DbSet<Z_Market.Models.Supplier> Suppliers { get; set; }
 
         public System.Data.Entity.DbSet<Z_Market.Models.Customer> Customers { get; set; }
+
+        public System.Data.Entity.DbSet<Z_Market.Models.Order> Orders { get; set; }
+
+        public System.Data.Entity.DbSet<Z_Market.Models.OrderDetail> OrderDetails { get; set; }
     }
 }

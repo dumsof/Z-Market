@@ -18,7 +18,7 @@ namespace Z_Market.Models
         [DisplayFormat(DataFormatString = "{0:yyyy/MM/dd}", ApplyFormatInEditMode = true)]
         [Display(Name = "Fecha Pedido")]
         [Required(ErrorMessage = "Usted debe ingresar {0}")]
-        public int DateOrder { get; set; }
+        public DateTime DateOrder { get; set; }
 
         //realcion con el modelo customers
         public int CustomerID { get; set; }

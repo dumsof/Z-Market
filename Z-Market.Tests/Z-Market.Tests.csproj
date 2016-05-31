@@ -82,10 +82,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Controllers\HomeControllerTest.cs" />
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="App.config" />
   </ItemGroup>
   <ItemGroup>
@@ -96,6 +92,10 @@
       <Project>{C4D09282-DE98-437F-95CF-F7D599D8C9CE}</Project>
       <Name>Z-Market</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Controllers\" />
+    <Folder Include="Properties\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.

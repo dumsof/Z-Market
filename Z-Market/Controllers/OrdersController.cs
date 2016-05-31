@@ -33,6 +33,7 @@ namespace Z_Market.Controllers
         public ActionResult NewOrder(OrderView orderView)
         {
 
+
             //if (orderView != null && orderView.Customer != null && orderView.Customer.CustomerID != 0)
             //{
             //    ViewBag.CustomerID = new SelectList(ObtenerCliente(), "CustomerID", "FullName", orderView.Customer.CustomerID);
@@ -41,8 +42,60 @@ namespace Z_Market.Controllers
             //{
             ViewBag.CustomerID = new SelectList(ObtenerCliente(), "CustomerID", "FullName");
             //}
+            orderView = SessionHelper.Get<OrderView>(Session, SessionKey.ORDER_VIEW);
+            var customerID = int.Parse(Request["CustomerID"]);
+            if (customerID == 0)
+            {
+                ViewBag.Error = "Debe seleccionar un cliente";
+                return View(orderView);
+            }
+            var customer = db.Customers.Find(customerID);
+            if (customer == null)
+            {
+                ViewBag.Error = "El cliente no existe.";
+                return View(orderView);
+            }
 
-            return View(orderView);
+            if (orderView.Products.Count == 0)
+            {
+                ViewBag.Error = "Debe ingresar detalle";
+                return View(orderView);
+            }
+
+            var order = new Order
+            {
+                CustomerID = customerID,
+                DateOrder = DateTime.Now,
+                OrderStatus = OrderStatus.Creada
+            };
+            db.Orders.Add(order);
+            db.SaveChanges();
+            //obtener identity del ultimo registro guardado.
+            int ultimoID = order.OrderID;
+            List<OrderDetail> listOrderDetail = new List<OrderDetail>();
+            foreach (var item in orderView.Products)
+            {
+                var orderDetail = new OrderDetail
+                {
+                    Description = item.Description,
+                    Price = item.Price,
+                    Quantity = item.Quantity,
+                    OrderID = ultimoID,
+                    ProductID = item.ProductID
+                };
+                listOrderDetail.Add(orderDetail);
+            }
+            //enviar todos lor registros en una sola operación a la base de datos.
+            db.OrderDetails.AddRange(listOrderDetail);
+            db.SaveChanges();
+            ViewBag.Message = "Orden registrada con exito.";
+
+            orderView = new OrderView();
+            orderView.Customer = new Customer();
+            orderView.Products = new List<ProductOrder>();
+            SessionHelper.Set(Session, SessionKey.ORDER_VIEW, orderView);
+
+            return View();
         }
 
 
@@ -58,7 +111,8 @@ namespace Z_Market.Controllers
             var orderView = SessionHelper.Get<OrderView>(Session, SessionKey.ORDER_VIEW);
             ViewBag.ProductID = new SelectList(ObtenerProducto(), "ProductID", "Description");
             ViewBag.CustomerID = new SelectList(ObtenerCliente(), "CustomerID", "FullName");
-            var productID = int.Parse(Request["ProductID"]);
+            int productID;
+            int.TryParse(Request["ProductID"], out productID);
             if (productID == 0)
             {
                 ViewBag.Error = "Debe seleccionar un producto.";
@@ -89,7 +143,14 @@ namespace Z_Market.Controllers
             return View("NewOrder", orderView);
         }
 
-
+        private void AgregarProductoCarrito()
+        {
+            var orderView = new OrderView();
+            orderView.Customer = new Customer();
+            orderView.Products = new List<ProductOrder>();
+            //se guarda la orden en session por medio de la clase generica para el manejo de session.
+            SessionHelper.Set(Session, SessionKey.ORDER_VIEW, orderView);
+        }
 
 
         /// <summary>
@@ -99,15 +160,15 @@ namespace Z_Market.Controllers
         private List<Customer> ObtenerCliente()
         {
             var list = db.Customers.ToList();
-            list.Add(new Customer { CustomerID = 0, FirstName = ".[Seleccione cliente..]" });
-            list.OrderBy(o => o.FullName).ToList();
+            list.Add(new Customer { CustomerID = 0, FirstName = "[-Seleccione cliente..]" });
+            list.OrderByDescending(o => o.FirstName).ToList();
             return list;
         }
 
         private List<Product> ObtenerProducto()
         {
             var list = db.Products.ToList();
-            list.Add(new Product { ProductID = 0, Description = ".[Seleccione producto..]" });
+            list.Add(new Product { ProductID = 0, Description = "[-Seleccione producto..]" });
             list.OrderBy(o => o.Description).ToList();
             return list;
         }
