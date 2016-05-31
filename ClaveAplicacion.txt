@@ -1,0 +1,7 @@
+user:dun34@hotmail.com
+clv:Dar11802Dum.
+
+--con este comando, que se escribe en la consola de nuguet se habilitan las migraciones automaticas
+--esto permite que si a la clase en el modelo se le agrega una propiedad esta pueda alterar la tabla para
+--ese modelo en la base de datos.
+Enable-Migrations -ContextTypeName Z_MarketContext -EnableAutomaticMigrations
