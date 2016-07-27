@@ -15,11 +15,13 @@ namespace Z_Market.Controllers
         // GET: Orders
         public ActionResult NewOrder()
         {
-            var orderView = new OrderView();
-            orderView.Customer = new Customer();
-            orderView.Products = new List<ProductOrder>();
-            //se guarda la orden en session por medio de la clase generica para el manejo de session.
-            SessionHelper.Set(Session, SessionKey.ORDER_VIEW, orderView);
+            //var orderView = new OrderView();
+            //orderView.Customer = new Customer();
+            //orderView.Products = new List<ProductOrder>();
+            ////se guarda la orden en session por medio de la clase generica para el manejo de session.
+            //SessionHelper.Set(Session, SessionKey.ORDER_VIEW, orderView);
+
+            var orderView = InicializarOrderView();
 
             //registros para llenar el combo
 
@@ -62,40 +64,50 @@ namespace Z_Market.Controllers
                 return View(orderView);
             }
 
-            var order = new Order
+            //inicio de la transaccion.
+            using (var transaccion = db.Database.BeginTransaction())
             {
-                CustomerID = customerID,
-                DateOrder = DateTime.Now,
-                OrderStatus = OrderStatus.Creada
-            };
-            db.Orders.Add(order);
-            db.SaveChanges();
-            //obtener identity del ultimo registro guardado.
-            int ultimoID = order.OrderID;
-            List<OrderDetail> listOrderDetail = new List<OrderDetail>();
-            foreach (var item in orderView.Products)
-            {
-                var orderDetail = new OrderDetail
+                try
                 {
-                    Description = item.Description,
-                    Price = item.Price,
-                    Quantity = item.Quantity,
-                    OrderID = ultimoID,
-                    ProductID = item.ProductID
-                };
-                listOrderDetail.Add(orderDetail);
+                    var order = new Order
+                    {
+                        CustomerID = customerID,
+                        DateOrder = DateTime.Now,
+                        OrderStatus = OrderStatus.Creada
+                    };
+                    db.Orders.Add(order);
+                    db.SaveChanges();
+                    //obtener identity del ultimo registro guardado.
+                    int ultimoID = order.OrderID;
+                    List<OrderDetail> listOrderDetail = new List<OrderDetail>();
+                    foreach (var item in orderView.Products)
+                    {
+                        var orderDetail = new OrderDetail
+                        {
+                            Description = item.Description,
+                            Price = item.Price,
+                            Quantity = item.Quantity,
+                            OrderID = ultimoID,
+                            ProductID = item.ProductID
+                        };
+                        listOrderDetail.Add(orderDetail);
+                    }
+                    //enviar todos lor registros en una sola operación a la base de datos.
+                    db.OrderDetails.AddRange(listOrderDetail);
+                    db.SaveChanges();
+                    transaccion.Commit();
+                    ViewBag.Message = string.Format("La orden: {0}, registrada con exito.", ultimoID);
+
+                }
+                catch (Exception ex)
+                {
+                    transaccion.Rollback();
+                    ViewBag.Error = "Error :" + ex.Message;
+                    return View(orderView);
+                }
             }
-            //enviar todos lor registros en una sola operación a la base de datos.
-            db.OrderDetails.AddRange(listOrderDetail);
-            db.SaveChanges();
-            ViewBag.Message = "Orden registrada con exito.";
-
-            orderView = new OrderView();
-            orderView.Customer = new Customer();
-            orderView.Products = new List<ProductOrder>();
-            SessionHelper.Set(Session, SessionKey.ORDER_VIEW, orderView);
-
-            return View();
+            orderView = InicializarOrderView();
+            return View(orderView);
         }
 
 
@@ -152,6 +164,18 @@ namespace Z_Market.Controllers
             SessionHelper.Set(Session, SessionKey.ORDER_VIEW, orderView);
         }
 
+        /// <summary>
+        /// metodo que se utiliza para agregar los producto que el cliente selecciona al carrito
+        /// </summary>
+        /// <returns></returns>
+        private OrderView InicializarOrderView()
+        {
+            OrderView orderView = new OrderView();
+            orderView.Customer = new Customer();
+            orderView.Products = new List<ProductOrder>();
+            SessionHelper.Set(Session, SessionKey.ORDER_VIEW, orderView);
+            return orderView;
+        }
 
         /// <summary>
         /// permite agregar a los datos de clietes un registre con la descripcion seleccione
@@ -161,7 +185,7 @@ namespace Z_Market.Controllers
         {
             var list = db.Customers.ToList();
             list.Add(new Customer { CustomerID = 0, FirstName = "[-Seleccione cliente..]" });
-            list.OrderByDescending(o => o.FirstName).ToList();
+            list.OrderBy(o => o.FirstName).ToList();
             return list;
         }
 

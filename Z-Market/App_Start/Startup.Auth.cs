@@ -54,6 +54,7 @@ namespace Z_Market
             //   consumerKey: "",
             //   consumerSecret: "");
 
+            //poder loguease
             //app.UseFacebookAuthentication(
             //   appId: "",
             //   appSecret: "");
